@@ -4,7 +4,9 @@
  * Rules, each printed with its ID when it fails:
  *   G1 (C-08-09)  A PR labelled `connector-include` may change only `connectors.lock`.
  *   G2 (C-08-09)  `connectors.lock` changes only through such a PR (AGENTS.md rule 2): a PR
- *                 without the label that changes it fails.
+ *                 without the label that changes it fails. One exception: creating the lock
+ *                 with no entries, where none existed (the template's own first commit), adds
+ *                 nothing a connector could load.
  *   G3 (C-08-10)  An automated PR (labelled `connector-include`, or opened by a bot account)
  *                 may not change the files that are the engine's AI enforcement: `.claude/`,
  *                 `.codex/`, `.github/`, `AGENTS.md`, `CLAUDE.md` (ADR 0005 §7.3 item 3, so the
@@ -35,6 +37,8 @@ export interface GuardInput {
   readonly changed: readonly string[];
   readonly labels: readonly string[];
   readonly authorIsBot: boolean;
+  /** `connectors.lock` did not exist at the merge base and is created with no entries. */
+  readonly lockCreatedEmpty?: boolean;
 }
 
 export interface Violation {
@@ -62,7 +66,7 @@ export function evaluate(input: GuardInput): Violation[] {
         paths: others,
       });
     }
-  } else if (input.changed.includes(LOCK_FILE)) {
+  } else if (input.changed.includes(LOCK_FILE) && input.lockCreatedEmpty !== true) {
     violations.push({
       rule: 'G2',
       message: `${LOCK_FILE} changes only through an include PR labelled ${INCLUDE_LABEL}, made with pnpm cc:include (C-08-09)`,
@@ -94,13 +98,35 @@ function git(repo: string, args: readonly string[]): string {
   }
 }
 
-/** The paths changed between the merge base of `base` and `head`, and `head`. */
-export function changedPaths(repo: string, base: string, head: string): string[] {
+/** A file's text at a commit, or undefined when it does not exist there. */
+function fileAt(repo: string, rev: string, path: string): string | undefined {
+  try {
+    return execFileSync('git', ['-C', repo, 'show', `${rev}:${path}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return undefined;
+  }
+}
+
+function isEmptyLock(text: string | undefined): boolean {
+  if (text === undefined) return false;
+  try {
+    const lock = JSON.parse(text) as { entries?: unknown };
+    return Array.isArray(lock.entries) && lock.entries.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** What the guard needs from git: the paths changed between merge-base(base, head) and head. */
+export function pullRequestFacts(repo: string, base: string, head: string): { changed: string[]; lockCreatedEmpty: boolean } {
   const mergeBase = git(repo, ['merge-base', base, head]).trim();
-  return git(repo, ['diff', '--name-only', '--no-renames', '-z', mergeBase, head])
+  const changed = git(repo, ['diff', '--name-only', '--no-renames', '-z', mergeBase, head])
     .split('\0')
     .filter((p) => p.length > 0)
     .sort();
+  const lockCreatedEmpty =
+    changed.includes(LOCK_FILE) && fileAt(repo, mergeBase, LOCK_FILE) === undefined && isEmptyLock(fileAt(repo, head, LOCK_FILE));
+  return { changed, lockCreatedEmpty };
 }
 
 interface PullRequestEvent {
@@ -183,16 +209,17 @@ export function main(argv: readonly string[], env: NodeJS.ProcessEnv = process.e
     console.error('cc:path-guard: the pull request has no base commit; pass --base <rev>');
     return 2;
   }
-  let changed: string[];
+  let facts: { changed: string[]; lockCreatedEmpty: boolean };
   try {
-    changed = changedPaths(options.repo, options.base, options.head ?? 'HEAD');
+    facts = pullRequestFacts(options.repo, options.base, options.head ?? 'HEAD');
   } catch (error) {
     console.error(`cc:path-guard: ${(error as Error).message}`);
     return 2;
   }
   const labels = options.labels.length > 0 ? options.labels.join(', ') : 'none';
   const author = options.bot ? 'bot' : 'person';
-  const violations = evaluate({ changed, labels: options.labels, authorIsBot: options.bot });
+  const { changed, lockCreatedEmpty } = facts;
+  const violations = evaluate({ changed, labels: options.labels, authorIsBot: options.bot, lockCreatedEmpty });
   if (violations.length === 0) {
     console.log(`cc:path-guard: ok  ${changed.length} file(s) changed; labels: ${labels}; author: ${author}`);
     return 0;

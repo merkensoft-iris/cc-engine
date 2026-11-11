@@ -140,6 +140,38 @@ describe('cc:path-guard against a fixture engine', () => {
     expect(r.out).toContain('G2');
   });
 
+  it('C-08-09 creating connectors.lock with no entries, where none existed, needs no label', () => {
+    const repo = fixtureEngineRepo();
+    git(repo, 'checkout', '-q', 'main');
+    git(repo, 'rm', '-q', 'connectors.lock');
+    git(repo, 'commit', '-q', '-m', 'engine without a lock');
+    git(repo, 'checkout', '-q', '-B', 'pr');
+    change(repo, 'connectors.lock', '{\n  "lockVersion": 1,\n  "entries": []\n}\n');
+    change(repo, 'ui/Status.tsx', 'export default null;\n');
+    commit(repo);
+    expect(runGuard(['--repo', repo, '--base', 'main', '--head', 'HEAD']).status).toBe(0);
+  });
+
+  it('C-08-09 creating connectors.lock with an entry, where none existed, still needs an include PR', () => {
+    const repo = fixtureEngineRepo();
+    git(repo, 'checkout', '-q', 'main');
+    git(repo, 'rm', '-q', 'connectors.lock');
+    git(repo, 'commit', '-q', '-m', 'engine without a lock');
+    git(repo, 'checkout', '-q', '-B', 'pr');
+    bumpLock(repo);
+    commit(repo);
+    const r = runGuard(['--repo', repo, '--base', 'main', '--head', 'HEAD']);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toContain('G2');
+  });
+
+  it('C-08-09 emptying an existing connectors.lock still needs an include PR', () => {
+    const repo = fixtureEngineRepo();
+    change(repo, 'connectors.lock', '{\n  "lockVersion": 1,\n  "entries": []\n}\n');
+    commit(repo);
+    expect(runGuard(['--repo', repo, '--base', 'main', '--head', 'HEAD']).status).toBe(1);
+  });
+
   it('C-08-10 a bot-authored PR that changes .claude/settings.json fails (G3, ADR 0005 §7.3 item 3)', () => {
     const repo = fixtureEngineRepo();
     change(repo, '.claude/settings.json', '{"permissions":{"deny":[]}}\n');
