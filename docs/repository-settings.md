@@ -12,7 +12,7 @@ copy (*your-engine*) made from it with "Use this template".
 | 2 Credential: CC's GitHub token has Issues read and write, no Contents | a fine-grained token, below | the owner, in GitHub's UI |
 | 3 Repository: `main` protected, the user is the CODEOWNER, the path guard | `.github/CODEOWNERS`, `.github/workflows/ci.yml`, branch protection below | files here; branch protection by the owner |
 | 4 Runtime: CC starts only from a clean tree and never writes the checkout | the foundation (04 §10 rules 2 and 4) | the foundation |
-| 5 Harness: deny rules for edits and shell | `.claude/settings.json`, `.codex/config.toml` | files here |
+| 5 Harness: deny rules for edits and shell | `.claude/settings.json`, `.codex/config.toml`; **parked** in `.claude/settings.lockdown.json`, `.codex/config.lockdown.toml` | files here; parked until the Phase 1 engine-building tasks are merged ([lockdown-parked.md](lockdown-parked.md)) |
 
 ## Commands
 
@@ -82,7 +82,8 @@ this repository; that identity is firstmate's, not Command Center's.
 ## The optional harness effect probe
 
 The `harness (effect probe)` CI job (ADR 0005 §7.3 item 2) asks a model, with the shipped
-settings in place, to write a file and run a command, and fails if anything changed. It calls
+settings in place, to write a file and run a command, and fails if anything changed. While
+layer 5 is parked, it installs the parked `.claude/settings.lockdown.json` in its clone first. It calls
 the Anthropic API, so it is off until the owner turns it on:
 
 ```bash
@@ -91,6 +92,9 @@ gh variable set CC_HARNESS_PROBE --repo "$repo" --body true
 ```
 
 ## What layer 5 does not stop
+
+While layer 5 is parked ([lockdown-parked.md](lockdown-parked.md)) it stops nothing; what
+follows describes it once it is back on.
 
 The deny rules constrain a model inside a session that loaded `.claude/settings.json`. They do
 not constrain whoever launches the CLI: `claude --setting-sources user` ignores the file (ADR

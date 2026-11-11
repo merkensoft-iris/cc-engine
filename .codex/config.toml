@@ -1,6 +1,5 @@
-# Engine repository: the AI here never changes code (AGENTS.md rule 1; C-08-10 layer 5).
-# Read-only sandbox: reads and sandboxed commands are allowed; writes and network are not.
-# Proposed in ADR 0005 report §8 and UNVERIFIED: no Codex CLI was available to spike S9.
-# Spike P0-09 (S3b) confirms or corrects it; pnpm cc:harness-check keeps it from drifting.
-sandbox_mode    = "read-only"
-approval_policy = "never"
+# PARKED (11 Nov 2026): the engine's AI lock-down is switched off until the Phase 1
+# engine-building tasks are merged, so agents can build the engine. The decided config
+# (ADR 0005 report §8: sandbox_mode = "read-only", approval_policy = "never") is kept,
+# unchanged, in .codex/config.lockdown.toml; pnpm cc:harness-check validates it there.
+# Re-enable by moving it back over this file: see docs/lockdown-parked.md.
