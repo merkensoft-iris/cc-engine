@@ -9,7 +9,8 @@ forbids the engine's own AI from changing code. The design lives in
 chiefly 08 §4 (layout and extension points), §5.2 (AI enforcement) and §9 (CI).
 
 > **Status: skeleton (build step P1-18).** The extension points, their validation, CI and the
-> AI enforcement are here. Building and starting the app (`pnpm build`, `pnpm start`),
+> AI enforcement are here; the AI lock-down is parked until the Phase 1 engine-building tasks
+> are merged ([docs/lockdown-parked.md](docs/lockdown-parked.md)). Building and starting the app (`pnpm build`, `pnpm start`),
 > `pnpm cc:upgrade` and the exact `@cc/*` pins arrive with P1-16, once the foundation packages
 > are published; until then those scripts say so and exit 1, and `extension-api/` carries an
 > interim copy of the contract (see its README).
@@ -57,7 +58,7 @@ Command Center itself never writes this checkout.
 |---|---|
 | `pnpm cc:validate` | Validates `cc.config.ts`, `theme/tokens.json`, `connectors.lock` and rule D3 for `ui/` |
 | `pnpm cc:path-guard` | In CI: an include PR may change only `connectors.lock`; automated PRs may not touch the AI enforcement files |
-| `pnpm cc:harness-check` | Checks `.claude/settings.json` and `.codex/config.toml` deny exactly what ADR 0005 requires |
+| `pnpm cc:harness-check` | Checks the Claude Code and Codex harness files deny exactly what ADR 0005 requires; while the lock-down is parked, the parked `.claude/settings.lockdown.json` and `.codex/config.lockdown.toml` |
 | `pnpm cc:lock-verify` | Checks every `connectors.lock` pin against its release |
 | `pnpm cc:schemas [--check]` | Regenerates the JSON Schemas in `extension-api/v1/` |
 | `pnpm test`, `pnpm typecheck` | Tests (named after the acceptance IDs they prove) and type-check |
@@ -66,7 +67,13 @@ Exit codes: 0 pass, 1 failure, 2 usage error (08 §6).
 
 ## AI agents in this repository
 
-The engine's AI reads, and proposes changes through Command Center; it does not edit files,
+**Parked:** until the Phase 1 engine-building tasks are merged, the lock-down below is switched
+off so agents can build the engine: `.claude/settings.json` and `.codex/config.toml` block
+nothing, and the decided rules wait, still checked by CI, in `.claude/settings.lockdown.json`
+and `.codex/config.lockdown.toml`. See [docs/lockdown-parked.md](docs/lockdown-parked.md) for
+what still runs, how it comes back on, and the plan after that.
+
+Once re-enabled, the engine's AI reads, and proposes changes through Command Center; it does not edit files,
 run a shell, commit or push. `.claude/settings.json` removes those tools from Claude Code
 (verified on Claude Code 2.1.278) and `.codex/config.toml` asks Codex for a read-only sandbox
 (not yet verified); see `AGENTS.md` and [docs/repository-settings.md](docs/repository-settings.md).

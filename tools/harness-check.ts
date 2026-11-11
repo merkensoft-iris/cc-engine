@@ -2,6 +2,12 @@
  * pnpm cc:harness-check: checks the engine's harness deny rules, layer 5 of C-08-10
  * (08 §5.2; ADR 0005, decision A of 10 Nov 2026).
  *
+ * PARKED (11 Nov 2026): the owner switched the lock-down off until the Phase 1 engine-building
+ * tasks are merged (docs/lockdown-parked.md). The decided rules are kept unchanged in
+ * `.claude/settings.lockdown.json` and `.codex/config.lockdown.toml`, which neither Claude Code
+ * nor Codex loads. While LOCKDOWN_PARKED is true this checks those parked files, so the rules
+ * stay correct; below, `.claude/settings.json` and `.codex/config.toml` mean the parked copies.
+ *
  * `.claude/settings.json` must:
  *   - parse as strict JSON. Claude Code silently ignores a malformed settings file in print
  *     mode, and layer 5 vanishes with it (ADR 0005 F3);
@@ -65,16 +71,25 @@ export const REQUIRED_DENY = [
 export const CLAUDE_SETTINGS = '.claude/settings.json';
 export const CODEX_CONFIG = '.codex/config.toml';
 
+/**
+ * The lock-down is parked (docs/lockdown-parked.md): the rules live in the files below, which
+ * no harness loads, and the live files above hold no deny rules. To re-enable, move each parked
+ * file back over its live file and set LOCKDOWN_PARKED to false.
+ */
+export const LOCKDOWN_PARKED = true;
+export const CLAUDE_SETTINGS_PARKED = '.claude/settings.lockdown.json';
+export const CODEX_CONFIG_PARKED = '.codex/config.lockdown.toml';
+
 /** Problems with a `.claude/settings.json` text; empty when it holds. */
-export function checkClaudeSettings(text: string): string[] {
+export function checkClaudeSettings(text: string, file: string = CLAUDE_SETTINGS): string[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch (error) {
-    return [`${CLAUDE_SETTINGS} is not valid JSON (${(error as Error).message}); Claude Code would silently ignore it (ADR 0005 F3)`];
+    return [`${file} is not valid JSON (${(error as Error).message}); Claude Code would silently ignore it (ADR 0005 F3)`];
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return [`${CLAUDE_SETTINGS} must be a JSON object`];
+    return [`${file} must be a JSON object`];
   }
   const settings = parsed as Record<string, unknown>;
   const problems: string[] = [];
@@ -124,14 +139,14 @@ function topLevelTomlStrings(text: string): Map<string, string> {
 }
 
 /** Problems with a `.codex/config.toml` text; empty when it holds. */
-export function checkCodexConfig(text: string): string[] {
+export function checkCodexConfig(text: string, file: string = CODEX_CONFIG): string[] {
   const values = topLevelTomlStrings(text);
   const problems: string[] = [];
   if (values.get('sandbox_mode') !== 'read-only') {
-    problems.push(`${CODEX_CONFIG} must set sandbox_mode = "read-only" at top level (ADR 0005 report §8)`);
+    problems.push(`${file} must set sandbox_mode = "read-only" at top level (ADR 0005 report §8)`);
   }
   if (values.get('approval_policy') !== 'never') {
-    problems.push(`${CODEX_CONFIG} must set approval_policy = "never" at top level (ADR 0005 report §8)`);
+    problems.push(`${file} must set approval_policy = "never" at top level (ADR 0005 report §8)`);
   }
   return problems;
 }
@@ -147,17 +162,23 @@ export function main(argv: readonly string[]): number {
   }
   const problems: string[] = [];
   for (const [file, check] of [
-    [CLAUDE_SETTINGS, checkClaudeSettings],
-    [CODEX_CONFIG, checkCodexConfig],
+    [LOCKDOWN_PARKED ? CLAUDE_SETTINGS_PARKED : CLAUDE_SETTINGS, checkClaudeSettings],
+    [LOCKDOWN_PARKED ? CODEX_CONFIG_PARKED : CODEX_CONFIG, checkCodexConfig],
   ] as const) {
     const path = join(root, file);
     if (!existsSync(path)) problems.push(`${file} is missing (08 §5.2 layer 5)`);
-    else problems.push(...check(readFileSync(path, 'utf8')));
+    else problems.push(...check(readFileSync(path, 'utf8'), file));
   }
   if (problems.length > 0) {
     console.log(`cc:harness-check: FAIL  ${problems.length} problem(s) in the harness deny rules (C-08-10 layer 5)`);
     for (const p of problems) console.log(`  ${p}`);
     return 1;
+  }
+  if (LOCKDOWN_PARKED) {
+    console.log(
+      `cc:harness-check: ok, PARKED (not enforced)  ${CLAUDE_SETTINGS_PARKED} denies ${REQUIRED_DENY.length} tools with bypass mode disabled, ${CODEX_CONFIG_PARKED} is read-only (inventory verified on Claude Code ${VERIFIED_CLAUDE_CODE}); see docs/lockdown-parked.md`,
+    );
+    return 0;
   }
   console.log(
     `cc:harness-check: ok  ${REQUIRED_DENY.length} tools denied, bypass mode disabled, Codex read-only (inventory verified on Claude Code ${VERIFIED_CLAUDE_CODE})`,

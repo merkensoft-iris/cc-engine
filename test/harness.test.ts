@@ -2,16 +2,36 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { checkClaudeSettings, checkCodexConfig, main, REQUIRED_DENY } from '../tools/harness-check.ts';
+import {
+  CLAUDE_SETTINGS,
+  CLAUDE_SETTINGS_PARKED,
+  CODEX_CONFIG,
+  CODEX_CONFIG_PARKED,
+  checkClaudeSettings,
+  checkCodexConfig,
+  LOCKDOWN_PARKED,
+  main,
+  REQUIRED_DENY,
+} from '../tools/harness-check.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const shipped = () => readFileSync(join(ROOT, '.claude', 'settings.json'), 'utf8');
+// While the lock-down is parked (docs/lockdown-parked.md) the decided rules live in the parked
+// files; these tests keep them correct so re-enabling is only moving them back.
+const claudeFile = LOCKDOWN_PARKED ? CLAUDE_SETTINGS_PARKED : CLAUDE_SETTINGS;
+const codexFile = LOCKDOWN_PARKED ? CODEX_CONFIG_PARKED : CODEX_CONFIG;
+const shipped = () => readFileSync(join(ROOT, claudeFile), 'utf8');
 
 describe('harness deny rules (C-08-10 layer 5, ADR 0005)', () => {
-  it('C-08-10 the shipped .claude/settings.json and .codex/config.toml pass cc:harness-check', () => {
+  it('C-08-10 the shipped (or parked) Claude settings and Codex config pass cc:harness-check', () => {
     expect(checkClaudeSettings(shipped())).toEqual([]);
-    expect(checkCodexConfig(readFileSync(join(ROOT, '.codex', 'config.toml'), 'utf8'))).toEqual([]);
+    expect(checkCodexConfig(readFileSync(join(ROOT, codexFile), 'utf8'))).toEqual([]);
     expect(main(['--repo', ROOT])).toBe(0);
+  });
+
+  it.runIf(LOCKDOWN_PARKED)('C-08-10 parked: the live files block nothing, so agents can build the engine', () => {
+    expect(JSON.parse(readFileSync(join(ROOT, CLAUDE_SETTINGS), 'utf8'))).toEqual({});
+    const codex = readFileSync(join(ROOT, CODEX_CONFIG), 'utf8');
+    expect(codex.split(/\r?\n/).filter((l) => l.trim() !== '' && !l.trim().startsWith('#'))).toEqual([]);
   });
 
   it('C-08-10 the shipped deny list is exactly the ADR 0005 file plus the command-center write tools', () => {

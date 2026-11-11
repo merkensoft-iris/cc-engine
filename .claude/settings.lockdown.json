@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Bash",
+      "Write",
+      "Edit",
+      "NotebookEdit",
+      "Monitor",
+      "Agent",
+      "Workflow",
+      "EnterWorktree",
+      "ExitWorktree",
+      "CronCreate",
+      "CronDelete",
+      "RemoteTrigger",
+      "PushNotification",
+      "SendMessage",
+      "TaskCreate",
+      "TaskUpdate",
+      "Artifact",
+      "Projects",
+      "DesignSync",
+      "mcp__command-center__cc_create_action",
+      "mcp__command-center__cc_update_action",
+      "mcp__command-center__cc_claim",
+      "mcp__command-center__cc_attach_evidence",
+      "mcp__command-center__cc_connector_invoke"
+    ]
+  }
+}
