@@ -1,0 +1,159 @@
+{
+  "title": "cc.config (extension API 1)",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "extensionApi": {
+      "type": "number",
+      "const": 1
+    },
+    "modules": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "vocabulary": {
+      "type": "object",
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "issue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "measure": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "meeting": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        }
+      },
+      "additionalProperties": false
+    },
+    "frameworkParameters": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?:custom:)?[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {}
+      }
+    },
+    "calendars": {
+      "type": "object",
+      "properties": {
+        "providers": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          }
+        },
+        "routes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "workstreams": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "all"
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9-]*$"
+                    }
+                  }
+                ]
+              },
+              "targets": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "binding": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "calendar": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "primary",
+                        "mirror"
+                      ]
+                    },
+                    "colour": {
+                      "type": "string",
+                      "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+                    }
+                  },
+                  "required": [
+                    "binding",
+                    "calendar",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "workstreams",
+              "targets"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "titleTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "required": [
+        "providers",
+        "routes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "extensionApi"
+  ],
+  "additionalProperties": false
+}

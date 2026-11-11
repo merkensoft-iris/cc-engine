@@ -1,0 +1,5 @@
+{
+  "$schema": "./extension-api/v1/connectors-lock.schema.json",
+  "lockVersion": 1,
+  "entries": []
+}

@@ -1,0 +1,324 @@
+{
+  "title": "theme/tokens.json (extension API 1)",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "color": {
+      "type": "object",
+      "properties": {
+        "background": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "surface": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "text": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "textMuted": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "border": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "accent": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "accentText": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "success": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "warning": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "danger": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "font": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63})(?:\\s*,\\s*(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63}))*$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "heading": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63})(?:\\s*,\\s*(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63}))*$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "mono": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63})(?:\\s*,\\s*(?:\"[A-Za-z0-9 _-]{1,64}\"|[A-Za-z][A-Za-z0-9 -]{0,63}))*$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "radius": {
+      "type": "object",
+      "properties": {
+        "small": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:0|\\d{1,3}(?:\\.\\d{1,3})?(?:px|rem))$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "medium": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:0|\\d{1,3}(?:\\.\\d{1,3})?(?:px|rem))$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        },
+        "large": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:0|\\d{1,3}(?:\\.\\d{1,3})?(?:px|rem))$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "density": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "pattern": "^(?:compact|comfortable|spacious)$"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
