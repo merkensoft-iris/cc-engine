@@ -1,0 +1,31 @@
+{
+  "name": "cc-engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Command Center engine template: configuration, theme, UI widgets, framework and pack files and connectors.lock for one person's Command Center",
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "node tools/not-yet.ts build P1-16",
+    "start": "node tools/not-yet.ts start P1-16",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "cc:validate": "node tools/validate.ts",
+    "cc:path-guard": "node tools/path-guard.ts",
+    "cc:harness-check": "node tools/harness-check.ts",
+    "cc:lock-verify": "node tools/lock-verify.ts",
+    "cc:schemas": "node tools/gen-schemas.ts",
+    "cc:upgrade": "node tools/not-yet.ts cc:upgrade P1-16",
+    "cc:include": "node tools/not-yet.ts cc:include P5"
+  },
+  "devDependencies": {
+    "@types/node": "~26.6.6",
+    "esbuild": "~0.28.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0",
+    "zod": "^4.6.7"
+  }
+}

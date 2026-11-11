@@ -1,0 +1,6 @@
+# Engine repository: the AI here never changes code (AGENTS.md rule 1; C-08-10 layer 5).
+# Read-only sandbox: reads and sandboxed commands are allowed; writes and network are not.
+# Proposed in ADR 0005 report §8 and UNVERIFIED: no Codex CLI was available to spike S9.
+# Spike P0-09 (S3b) confirms or corrects it; pnpm cc:harness-check keeps it from drifting.
+sandbox_mode    = "read-only"
+approval_policy = "never"

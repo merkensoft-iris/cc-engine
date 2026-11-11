@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["npm"],
+  "rangeStrategy": "pin",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "One PR per foundation release, updating every @cc/* pin together (08 §9). It merges as it is; the user runs pnpm cc:upgrade locally (owner decision D-1).",
+      "matchPackageNames": ["@cc/*"],
+      "groupName": "Command Center foundation",
+      "groupSlug": "cc-foundation",
+      "automerge": false
+    }
+  ]
+}

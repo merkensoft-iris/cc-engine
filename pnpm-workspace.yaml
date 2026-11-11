@@ -1,0 +1,4 @@
+# Single-package workspace; pnpm reads its settings from this file.
+# esbuild ships its binary as an optional dependency; its install script only verifies it.
+allowBuilds:
+  esbuild: true
