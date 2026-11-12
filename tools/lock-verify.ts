@@ -8,7 +8,7 @@
  * rather than passing unchecked. The lock format itself is checked by `pnpm cc:validate`.
  *
  * This is the one engine CI step that uses the network (it runs on Linux only), and an empty
- * lock needs none. Interim: moves into @cc/build at P1-16.
+ * lock needs none. Interim: moves into @cc/build when the foundation is pinned (extension-api/README.md).
  * Exit codes follow 08 §6: 0 pass, 1 a check failed, 2 usage error.
  */
 import { createHash } from 'node:crypto';

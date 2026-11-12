@@ -19,7 +19,8 @@
  * account type, and the base and head commits. Flags override the event, for local runs and
  * tests: --repo <dir> --base <rev> --head <rev> --label <name> (repeatable) --bot.
  *
- * Interim: this script moves into @cc/build with the other engine scripts (08 §6, P1-16).
+ * Interim: this script moves into @cc/build with the other engine scripts (08 §6) when the
+ * foundation is pinned (extension-api/README.md).
  * Exit codes follow 08 §6: 0 pass (or not a pull request), 1 a rule failed, 2 usage error.
  */
 import { execFileSync } from 'node:child_process';

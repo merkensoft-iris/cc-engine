@@ -9,8 +9,9 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "build": "node tools/not-yet.ts build P1-16",
-    "start": "node tools/not-yet.ts start P1-16",
+    "postinstall": "node tools/cc.ts install-stamp",
+    "build": "node tools/cc.ts build",
+    "start": "node tools/cc.ts start",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "cc:validate": "node tools/validate.ts",
@@ -18,8 +19,9 @@
     "cc:harness-check": "node tools/harness-check.ts",
     "cc:lock-verify": "node tools/lock-verify.ts",
     "cc:schemas": "node tools/gen-schemas.ts",
-    "cc:upgrade": "node tools/not-yet.ts cc:upgrade P1-16",
-    "cc:include": "node tools/not-yet.ts cc:include P5"
+    "cc:upgrade": "node tools/cc.ts upgrade",
+    "cc:include": "node tools/cc.ts include",
+    "cc:flags": "node tools/cc.ts flags"
   },
   "devDependencies": {
     "@types/node": "~26.6.6",
