@@ -4,7 +4,7 @@
  * stands in for the unpublished package, so these prove the wiring, not the foundation's bins.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,7 +29,9 @@ function allOn(): BuildFlags {
  * and exit with the code in their first `--exit=<n>` argument.
  */
 function engineWithFakeBuild(bins: readonly string[] = ['cc-build', 'cc-start', 'cc-upgrade', 'cc-include', 'cc-install-stamp']): string {
-  const root = mkdtempSync(join(tmpdir(), 'cc-scripts-'));
+  // realpath: on macOS the temporary directory is under /var, a symlink to /private/var, and
+  // the bin sees the resolved path as its cwd.
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'cc-scripts-')));
   dirs.push(root);
   const pkg = join(root, 'node_modules', '@cc', 'build');
   mkdirSync(join(pkg, 'bin'), { recursive: true });
