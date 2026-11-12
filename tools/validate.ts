@@ -7,12 +7,13 @@
  *   connectors.lock    the lock format of 05 §15.6
  *   ui/                rule D3: import allowlist, fail-closed count, global-name scan (decision 8)
  *   frameworks/, packs/, profile.json  listed only: the foundation's validators (C-01-03) run
- *                      on them from P1-16; nothing here pretends to check them
+ *                      on them in `pnpm build` (@cc/build); nothing here pretends to check them
  *
  * `cc.config.ts` is bundled with esbuild and imported from memory (ADR 0003, "Loading
  * cc.config.ts"); it may import types only until the @cc/* packages are pinned.
  *
- * Interim: moves into @cc/build (`cc-build` runs the same checks) at P1-16.
+ * Interim: moves into @cc/build (`cc-build` runs the same checks) when the foundation is pinned
+ * (extension-api/README.md, "Pinning the foundation").
  * Exit codes follow 08 §6: 0 pass, 1 a check failed, 2 usage error.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -129,7 +130,7 @@ export async function validate(root: string): Promise<Section[]> {
   sections.push({
     name: 'frameworks/, packs/',
     ok: true,
-    summary: `${deferred} file(s)${profile} left to the foundation's validators (C-01-03) from P1-16`,
+    summary: `${deferred} file(s)${profile} left to the foundation's validators (C-01-03) in pnpm build`,
     problems: [],
   });
   return sections;

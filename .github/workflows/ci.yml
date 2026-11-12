@@ -7,9 +7,11 @@
 # decided rules are kept in .claude/settings.lockdown.json and .codex/config.lockdown.toml. The
 # harness jobs below check those parked files, so the rules stay correct while not enforced.
 #
-# Not yet here, by build step: building and starting the user's app with @cc/build, and
-# `pnpm cc:upgrade --check` commenting the planned codemod edits on foundation dependency PRs
-# (owner decision D-1) arrive with P1-16, once the @cc/* packages are published and pinned.
+# Building the user's app (`pnpm build`, @cc/build) runs only while its build flag is on
+# (tools/build-flags.ts, README "Build flags"): it is off until the first @cc/* release is
+# pinned. On a foundation dependency PR, one that changes an @cc/* pin in package.json, the
+# foundation-upgrade jobs run `pnpm cc:upgrade --check` and comment the planned codemod edits;
+# the PR merges as it is and the user runs `pnpm cc:upgrade` locally (owner decision D-1).
 name: ci
 
 on:
@@ -56,6 +58,113 @@ jobs:
       - name: C-05-03 every connectors.lock pin matches its release (cc:lock-verify)
         if: runner.os == 'Linux'
         run: pnpm cc:lock-verify
+      - name: Build flags (tools/build-flags.ts)
+        id: flags
+        shell: bash
+        run: node tools/cc.ts flags | tee -a "$GITHUB_OUTPUT"
+      - name: Build the user's app with @cc/build (pnpm build; build flag build)
+        if: steps.flags.outputs.build == 'on'
+        run: pnpm build
+
+  foundation-upgrade:
+    # 08 §9: on a foundation dependency PR, list the codemod edits `pnpm cc:upgrade` would make.
+    # It runs the PR's foundation code, so it has read-only contents and no write token; the
+    # comment job below posts its output without checking out or running anything from the PR.
+    name: foundation update (cc:upgrade --check)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.pins.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Does this PR change an @cc/* pin?
+        id: pins
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff "$BASE_SHA" HEAD -- package.json | grep -E '^[-+][[:space:]]*"@cc/'; then
+            echo changed=true >> "$GITHUB_OUTPUT"
+          else
+            echo "No @cc/* pin changed: not a foundation dependency PR."
+            echo changed=false >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v6
+        if: steps.pins.outputs.changed == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.pins.outputs.changed == 'true'
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Install (frozen lockfile)
+        if: steps.pins.outputs.changed == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: D-1 list the planned codemod edits (pnpm cc:upgrade --check; writes nothing)
+        if: steps.pins.outputs.changed == 'true'
+        run: |
+          out="$RUNNER_TEMP/cc-upgrade"
+          mkdir -p "$out"
+          set +e
+          pnpm -s cc:upgrade --check > "$out/log" 2>&1
+          code=$?
+          set -e
+          echo "$code" > "$out/exit"
+          cat "$out/log"
+          # 0: nothing to do; 1: edits are due, which does not block the PR (D-1). Anything
+          # else is a usage error or a crash.
+          if [ "$code" -gt 1 ]; then
+            echo "::error::pnpm cc:upgrade --check exited $code"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.pins.outputs.changed == 'true'
+        with:
+          name: cc-upgrade-check
+          path: ${{ runner.temp }}/cc-upgrade/
+          retention-days: 7
+
+  foundation-upgrade-comment:
+    name: foundation update (comment)
+    needs: foundation-upgrade
+    # Pull requests from forks get a read-only token, so only same-repository PRs (the
+    # dependency bot's) are commented on.
+    if: always() && needs.foundation-upgrade.outputs.changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        # A run that failed before the check leaves no artifact; the comment then says so.
+        continue-on-error: true
+        with:
+          name: cc-upgrade-check
+          path: cc-upgrade
+      - name: Comment the planned edits on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          code="$(cat cc-upgrade/exit 2>/dev/null || echo none)"
+          case "$code" in
+            0) verdict="Nothing to do: the engine is already on the extension API this foundation release expects." ;;
+            1) verdict="Run \`pnpm cc:upgrade\` locally when convenient, before the next foundation major, and merge its edits like any change. This PR merges as it is (owner decision D-1)." ;;
+            *) verdict="\`pnpm cc:upgrade --check\` did not finish (exit $code); see the job log." ;;
+          esac
+          {
+            echo "### Foundation update: \`pnpm cc:upgrade --check\`"
+            echo
+            echo "$verdict"
+            echo
+            echo '<details><summary>Output</summary>'
+            echo
+            echo '~~~~text'
+            grep -v '^~~~~' cc-upgrade/log 2>/dev/null || echo '(no output)'
+            echo '~~~~'
+            echo '</details>'
+          } > body.md
+          gh pr comment "$PR_NUMBER" --body-file body.md --edit-last --create-if-none
 
   path-guard:
     # The job name is the required status check (docs/repository-settings.md).

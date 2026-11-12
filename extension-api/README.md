@@ -19,11 +19,37 @@ the final names (`import type { EngineConfig } from '@cc/schemas/engine/v1'`). T
 `tools/` (`cc:validate`, `cc:path-guard`, `cc:harness-check`, `cc:lock-verify`) are the
 engine scripts 08 §6 says come from `@cc/build`.
 
-**Removal (P1-16).** When the `@cc/*` packages are published, the engine template pins them
-exactly; this directory, the `paths` in `tsconfig.json`, and the interim scripts in `tools/`
-are deleted, and `package.json` runs the same commands from `@cc/build`. A change to this
-contract before then follows the foundation's `cc-change-extension-api` skill: additive
-changes keep API 1; a breaking change bumps the API and ships a codemod (ADR 0003 decision 6).
+A change to this contract before the foundation is pinned follows the foundation's
+`cc-change-extension-api` skill: additive changes keep API 1; a breaking change bumps the API
+and ships a codemod (ADR 0003 decision 6).
+
+## Pinning the foundation
+
+No `@cc/*` package is published yet, so `pnpm install` here depends on none of them: the
+scripts that belong to `@cc/build` (`build`, `start`, `cc:upgrade`, `cc:include` and the
+`postinstall` install stamp) go through `tools/cc.ts` behind build flags that are off
+(`tools/build-flags.ts`). After the first `cc:release` publishes the packages at version `X`,
+one PR pins them:
+
+1. Pin every `@cc/*` package the engine imports or runs, exactly and at the same version:
+   `pnpm add --save-exact @cc/build@X @cc/schemas@X @cc/ui-sdk@X`, plus any other package the
+   release's `packages/build/README.md` says an engine pins (for example `@cc/desktop`). If the
+   registry is not the npm default (OQ-08-07), add its `@cc:registry` line to an `.npmrc`
+   first. Commit `package.json` and `pnpm-lock.yaml`; Renovate keeps the pins together from
+   then on (`.github/renovate.json`).
+2. Turn on the `build` and `upgrade` flags in `tools/build-flags.ts`, and `start` too if the
+   release ships the desktop shell (P1-10). CI then runs `pnpm build`, and dependency PRs get
+   the `cc:upgrade --check` comment.
+3. Check that the release's bins are the ones `tools/cc.ts` names (`cc-build`, `cc-start`,
+   `cc-upgrade`, `cc-install-stamp`); a flag that is on with a missing bin fails with the bin's
+   name.
+4. Delete this directory and the `paths` in `tsconfig.json`; point `cc.config.ts`, `ui/` and
+   the tests at the published entry points; move `cc:validate`, `cc:path-guard`,
+   `cc:harness-check`, `cc:lock-verify` and `cc:schemas` to their `@cc/build` bins, and delete
+   the interim scripts in `tools/`. When nothing interim is left, `package.json` names the
+   bins directly and `tools/cc.ts` goes too.
+5. On a fresh template copy on macOS and on Windows: `pnpm install --frozen-lockfile`,
+   `pnpm build`, `pnpm start` (09 P1-16, the manual check).
 
 Extension API 1 starts from the shapes ADR 0003's prototype settled on (its "API 2"):
 `modules` as `{ id: boolean }`, `calendars` (02 §9.6), nested `color.accent` tokens, and

@@ -25,7 +25,8 @@
  *
  * What this cannot see: whether the invoker loads the file at all (F5). The effect probe of
  * ADR 0005 §7.3 items 1 and 2 (`claude doctor` and a write attempt) is the opt-in
- * `harness-probe` CI job. Interim: moves into @cc/build with the other engine scripts (P1-16).
+ * `harness-probe` CI job. Interim: moves into @cc/build with the other engine scripts when the
+ * foundation is pinned (extension-api/README.md).
  * Exit codes follow 08 §6: 0 pass, 1 a check failed, 2 usage error.
  */
 import { existsSync, readFileSync } from 'node:fs';

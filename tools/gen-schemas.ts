@@ -5,7 +5,8 @@
  * with their refinements, stay the authority; the JSON Schemas omit the refinements.
  *
  * Generated files are never edited by hand (C-08-03): `--check` fails when a file on disk
- * differs from what would be generated. Interim: `@cc/schemas` generates these at P1-16.
+ * differs from what would be generated. Interim: `@cc/schemas` generates these once the foundation is
+ * pinned (extension-api/README.md).
  * Exit codes follow 08 §6: 0 pass, 1 drift, 2 usage error.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
