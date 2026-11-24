@@ -81,11 +81,29 @@ export const calendarMappingSchema = z.strictObject({
   titleTemplate: z.string().min(1).max(120).optional(),
 });
 
+/** An npm package name, optionally scoped. */
+const packageName = z
+  .string()
+  .regex(/^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/, 'must be an npm package name')
+  .refine(
+    (name) => !name.startsWith('@cc/'),
+    'is a foundation package; a UI imports @cc/ui-sdk/v<N> and @cc/ui/v<N> without listing them, and nothing else of the foundation (D3)',
+  );
+
+/**
+ * The engine's UI (08 §4.3 item 3, ADR 0008 decision 1): `libraries` names the UI libraries,
+ * such as `react`, that files of `ui/` may import (any subpath) besides the versioned entry
+ * points `@cc/ui-sdk/v<N>` and `@cc/ui/v<N>` (rule D3).
+ */
+export const uiSettingsSchema = z.strictObject({
+  libraries: z.array(packageName).optional(),
+});
+
 const vocabularyWord = z.string().trim().min(1, 'must not be empty').max(40);
 
 /**
  * `cc.config.ts` at extension API 1 (08 §4.3 item 1): modules on or off, vocabulary, default
- * framework parameters and the calendar mapping. Checks that need the local store (a route's
+ * framework parameters, the calendar mapping and the UI libraries. Checks that need the local store (a route's
  * binding implements calendar@1; sensitive workstreams never share a binding, 02 §9.6 rule 4)
  * and parameter bounds (01 §5 ParameterSpec) run in the foundation at start.
  */
@@ -106,10 +124,12 @@ export const engineConfigSchema = z.strictObject({
   /** Default parameters per framework template ID (01 §9 level 1), checked against its ParameterSpec bounds. */
   frameworkParameters: z.record(z.string().regex(/^(?:custom:)?[a-z][a-z0-9-]*$/), z.record(z.string(), z.unknown())).optional(),
   calendars: calendarMappingSchema.optional(),
+  ui: uiSettingsSchema.optional(),
 });
 
 export type EngineConfig = z.input<typeof engineConfigSchema>;
 export type CalendarMapping = z.input<typeof calendarMappingSchema>;
+export type UiSettings = z.input<typeof uiSettingsSchema>;
 
 // ---------------------------------------------------------------------------------------
 // theme/tokens.json

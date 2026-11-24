@@ -2,8 +2,8 @@
 
 The Command Center engine template: the repository a user copies ("Use this template", not a
 fork) to set up their own Command Center, *your-engine*. It holds no foundation code - only
-pinned `@cc/*` dependencies and the user's business customisation (configuration, theme, UI
-widgets in declared slots, frameworks and packs, `connectors.lock`) - and its `AGENTS.md`
+pinned `@cc/*` dependencies and the user's business customisation (configuration, theme, the
+app UI, frameworks and packs, `connectors.lock`) - and its `AGENTS.md`
 forbids Command Center's own AI from changing code and lets development agents change only the
 UI, theme and configuration, through pull requests the user reviews. The design lives in
 [cc-foundation/docs/design](https://github.com/merkensoft-iris/cc-foundation/tree/main/docs/design),
@@ -71,9 +71,9 @@ which never fails an install.
 
 | File | What it sets | Spec |
 |---|---|---|
-| `cc.config.ts` | modules on or off, vocabulary, default framework parameters, the calendar mapping | 08 §4.3, 02 §9.6 |
+| `cc.config.ts` | modules on or off, vocabulary, default framework parameters, the calendar mapping, the UI libraries | 08 §4.3, 02 §9.6 |
 | `theme/tokens.json` | colours, fonts, radius and density; the layout is fixed | 08 §4.3, owner decision Q9 |
-| `ui/` | widgets in the slots the foundation declares | `ui/README.md`, rule D3 |
+| `ui/` | the app UI: empty for the default UI, or a composition root `ui/app.ts` over `@cc/ui/v1` | `ui/README.md`, rule D3, ADR 0008 |
 | `frameworks/`, `packs/` | `custom:` framework templates and packs | 01 §9 |
 | `connectors.lock` | the connector and adapter packages this Command Center may load | 05 §15.6 |
 | `profile.json` | optional: exported, non-sensitive onboarding answers | 01 §9.1 |

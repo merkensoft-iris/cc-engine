@@ -19,4 +19,5 @@ export default {
   //   providers: ['google-calendar'],
   //   routes: [{ workstreams: 'all', targets: [{ binding: 'gcal-main', calendar: 'Rhythm', role: 'primary' }] }],
   // },
+  // ui: { libraries: ['react', 'react-dom'] }, // UI libraries ui/ may import (rule D3)
 } satisfies EngineConfig;
