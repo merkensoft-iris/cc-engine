@@ -1,6 +1,16 @@
-# Engine repository: the AI here never changes code (AGENTS.md rule 1; C-08-10 layer 5).
+# Engine repository: Command Center's own AI never changes code (AGENTS.md rule 1; C-08-10
+# layer 5). The top level is its session's profile, the default for anything run here.
 # Read-only sandbox: reads and sandboxed commands are allowed; writes and network are not.
 # Proposed in ADR 0005 report §8 and UNVERIFIED: no Codex CLI was available to spike S9.
 # Spike P0-09 (S3b) confirms or corrects it; pnpm cc:harness-check keeps it from drifting.
 sandbox_mode    = "read-only"
+approval_policy = "never"
+
+# Development profile (ADR 0008 decision 2; AGENTS.md rule 1): a development agent working for
+# the user, launched with `codex --profile development`, may write the checkout and opens a pull
+# request the user reviews. Codex cannot limit writes to the rule 1 paths (ui/, theme/,
+# cc.config.ts, frameworks/, packs/), so the user's review holds that limit; cc:path-guard's G3
+# still keeps automated PRs off the enforcement files. UNVERIFIED like the rest of this file.
+[profiles.development]
+sandbox_mode    = "workspace-write"
 approval_policy = "never"

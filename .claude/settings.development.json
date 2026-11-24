@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "allow": [
+      "Edit(./ui/**)",
+      "Edit(./theme/**)",
+      "Edit(./cc.config.ts)",
+      "Edit(./frameworks/**)",
+      "Edit(./packs/**)"
+    ],
+    "deny": [
+      "Edit(./connectors.lock)",
+      "Edit(./.claude/**)",
+      "Edit(./.codex/**)",
+      "Edit(./.github/**)",
+      "Edit(./AGENTS.md)",
+      "Edit(./CLAUDE.md)",
+      "Edit(./.agents/**)",
+      "Edit(./.gitattributes)",
+      "Edit(./.gitignore)",
+      "Edit(./.node-version)",
+      "Edit(./README.md)",
+      "Edit(./docs/**)",
+      "Edit(./extension-api/**)",
+      "Edit(./fixtures/**)",
+      "Edit(./package.json)",
+      "Edit(./pnpm-lock.yaml)",
+      "Edit(./pnpm-workspace.yaml)",
+      "Edit(./test/**)",
+      "Edit(./tools/**)",
+      "Edit(./tsconfig.json)",
+      "Edit(./vitest.config.ts)",
+      "mcp__command-center__cc_create_action",
+      "mcp__command-center__cc_update_action",
+      "mcp__command-center__cc_claim",
+      "mcp__command-center__cc_attach_evidence",
+      "mcp__command-center__cc_connector_invoke"
+    ]
+  }
+}

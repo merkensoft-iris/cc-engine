@@ -1,6 +1,7 @@
 # CI for the engine (cc-foundation docs/design/08-repository-and-automation.md §9): validate
 # cc.config and the extension files, test, cc:path-guard, check every connectors.lock pin,
-# and check the harness deny rules that are layer 5 of C-08-10 (ADR 0005 §7.3).
+# and check the harness deny rules that are layer 5 of C-08-10 (ADR 0005 §7.3) and the
+# development profile (.claude/settings.development.json; ADR 0008 decision 2).
 #
 # The lock-down is PARKED until the Phase 1 engine-building tasks are merged
 # (docs/lockdown-parked.md): .claude/settings.json and .codex/config.toml block nothing, and the
@@ -10,8 +11,10 @@
 # Building the user's app (`pnpm build`, @cc/build) runs only while its build flag is on
 # (tools/build-flags.ts, README "Build flags"): it is off until the first @cc/* release is
 # pinned. On a foundation dependency PR, one that changes an @cc/* pin in package.json, the
-# foundation-upgrade jobs run `pnpm cc:upgrade --check` and comment the planned codemod edits;
-# the PR merges as it is and the user runs `pnpm cc:upgrade` locally (owner decision D-1).
+# foundation-upgrade jobs run `pnpm cc:upgrade --check` and comment the planned codemod edits and
+# the UI drift, the upstream changes to the screens the engine ejected from @cc/ui (ADR 0008
+# decision 1); the PR merges as it is and the user runs `pnpm cc:upgrade` and `pnpm cc:ui-update`
+# locally (owner decision D-1).
 name: ci
 
 on:
@@ -51,7 +54,7 @@ jobs:
         run: pnpm cc:validate
       - name: C-08-03 generated JSON Schemas have not drifted (cc:schemas --check)
         run: pnpm cc:schemas --check
-      - name: C-08-10 harness deny rules are present and exact, parked (cc:harness-check)
+      - name: C-08-10 harness deny rules (parked) and the development profile are exact (cc:harness-check)
         run: pnpm cc:harness-check
       - name: Test (AC-08-09 path guard on a fixture engine, extension API, harness)
         run: pnpm test
@@ -67,9 +70,11 @@ jobs:
         run: pnpm build
 
   foundation-upgrade:
-    # 08 §9: on a foundation dependency PR, list the codemod edits `pnpm cc:upgrade` would make.
-    # It runs the PR's foundation code, so it has read-only contents and no write token; the
-    # comment job below posts its output without checking out or running anything from the PR.
+    # 08 §9: on a foundation dependency PR, list the codemod edits `pnpm cc:upgrade` would make
+    # and the upstream changes to ejected screens. It runs the PR's foundation code, so it has
+    # read-only contents and no write token, and writes the comment body here
+    # (tools/upgrade-comment.ts); the comment job below posts it without checking out or running
+    # anything from the PR.
     name: foundation update (cc:upgrade --check)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -100,7 +105,7 @@ jobs:
       - name: Install (frozen lockfile)
         if: steps.pins.outputs.changed == 'true'
         run: pnpm install --frozen-lockfile
-      - name: D-1 list the planned codemod edits (pnpm cc:upgrade --check; writes nothing)
+      - name: D-1 list the planned codemod edits and the UI drift (pnpm cc:upgrade --check; writes nothing)
         if: steps.pins.outputs.changed == 'true'
         run: |
           out="$RUNNER_TEMP/cc-upgrade"
@@ -111,6 +116,8 @@ jobs:
           set -e
           echo "$code" > "$out/exit"
           cat "$out/log"
+          # The comment body: the verdict, the UI drift per ejected screen, then the output.
+          node tools/upgrade-comment.ts "$out/log" "$code" > "$out/comment.md" || rm -f "$out/comment.md"
           # 0: nothing to do; 1: edits are due, which does not block the PR (D-1). Anything
           # else is a usage error or a crash.
           if [ "$code" -gt 1 ]; then
@@ -140,30 +147,29 @@ jobs:
         with:
           name: cc-upgrade-check
           path: cc-upgrade
-      - name: Comment the planned edits on the PR
+      - name: Comment the planned edits and the UI drift on the PR
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          code="$(cat cc-upgrade/exit 2>/dev/null || echo none)"
-          case "$code" in
-            0) verdict="Nothing to do: the engine is already on the extension API this foundation release expects." ;;
-            1) verdict="Run \`pnpm cc:upgrade\` locally when convenient, before the next foundation major, and merge its edits like any change. This PR merges as it is (owner decision D-1)." ;;
-            *) verdict="\`pnpm cc:upgrade --check\` did not finish (exit $code); see the job log." ;;
-          esac
-          {
-            echo "### Foundation update: \`pnpm cc:upgrade --check\`"
-            echo
-            echo "$verdict"
-            echo
-            echo '<details><summary>Output</summary>'
-            echo
-            echo '~~~~text'
-            grep -v '^~~~~' cc-upgrade/log 2>/dev/null || echo '(no output)'
-            echo '~~~~'
-            echo '</details>'
-          } > body.md
+          if [ -s cc-upgrade/comment.md ]; then
+            cp cc-upgrade/comment.md body.md
+          else
+            code="$(cat cc-upgrade/exit 2>/dev/null || echo none)"
+            {
+              echo "### Foundation update: \`pnpm cc:upgrade --check\`"
+              echo
+              echo "\`pnpm cc:upgrade --check\` did not finish (exit $code); see the job log."
+              echo
+              echo '<details><summary>Output</summary>'
+              echo
+              echo '~~~~text'
+              grep -v '^~~~~' cc-upgrade/log 2>/dev/null || echo '(no output)'
+              echo '~~~~'
+              echo '</details>'
+            } > body.md
+          fi
           gh pr comment "$PR_NUMBER" --body-file body.md --edit-last --create-if-none
 
   path-guard:
@@ -218,6 +224,17 @@ jobs:
           cat "$RUNNER_TEMP/rules.log"
           if grep -q 'Invalid settings' "$RUNNER_TEMP/rules.log"; then
             echo "::error::claude doctor reports invalid settings in $CC_HARNESS_SETTINGS; Claude Code would silently ignore the file and layer 5 with it"
+            exit 1
+          fi
+      - name: C-08-10 claude doctor reports no invalid settings in the development profile (ADR 0008 decision 2)
+        run: |
+          dev="$RUNNER_TEMP/doctor-development"
+          mkdir -p "$dev/.claude"
+          cp .claude/settings.development.json "$dev/.claude/settings.json"
+          (cd "$dev" && git init -q && claude doctor < /dev/null > "$RUNNER_TEMP/development.log" 2>&1 || true)
+          cat "$RUNNER_TEMP/development.log"
+          if grep -q 'Invalid settings' "$RUNNER_TEMP/development.log"; then
+            echo "::error::claude doctor reports invalid settings in .claude/settings.development.json; Claude Code would silently ignore the development profile"
             exit 1
           fi
       - name: C-08-10 the doctor check catches a malformed settings file (canary)

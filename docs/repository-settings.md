@@ -1,6 +1,9 @@
 # Repository settings: the engine's AI enforcement outside the files
 
-The engine's AI never changes code (C-08-10). Five layers enforce it (08 §5.2); this
+Command Center's own AI never changes code (C-08-10; development agents working for the user
+change only the paths of `AGENTS.md` rule 1, through pull requests the user reviews, under the
+development profile of ADR 0008, see [lockdown-parked.md](lockdown-parked.md)). Five layers
+enforce it (08 §5.2); this
 repository ships three as files (CODEOWNERS, `cc:path-guard` in CI, the harness deny rules)
 and the rest live in GitHub settings, which no file can set. This page lists those settings
 and the exact commands to apply them. Run them once on `cc-engine`, and again on each private
@@ -103,3 +106,7 @@ tool inventory is Claude Code 2.1.278's; a new tool with a command or path param
 hole, so re-check `REQUIRED_DENY` in `tools/harness-check.ts` when raising the version in CI.
 The Codex file is unverified until spike P0-09 reports. Layers 1 to 4 are the ones that hold
 against a determined person.
+
+The development profile (`.claude/settings.development.json`) keeps a development agent's file
+tools inside the `AGENTS.md` rule 1 paths, but not its shell: the user's review of its pull
+request is what holds that limit.
