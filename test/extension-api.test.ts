@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -183,6 +183,14 @@ describe('rule D3 for engine ui/ (ADR 0003 decision 8)', () => {
     expect(refused).toContain('imports react/jsx-runtime;');
     writeFileSync(join(dir, 'cc.config.ts'), "export default { extensionApi: 1, ui: { libraries: ['react'] } };\n");
     expect((await d3())?.ok).toBe(true);
+  });
+
+  it('C-08-02 an engine reached through a symlink is checked at its real path', async () => {
+    const dir = copyOfFixtureEngine();
+    const link = `${dir}-link`;
+    symlinkSync(dir, link, 'junction');
+    dirs.push(link);
+    expect((await validate(link)).find((s) => s.name === 'ui/ (D3)')?.ok).toBe(true);
   });
 
   it('C-08-02 a ui/ file esbuild cannot parse fails closed instead of passing unchecked', async () => {

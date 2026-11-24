@@ -15,7 +15,7 @@
  *      honest mistakes, not a boundary: `globalThis['fe' + 'tch']` evades it by design. The
  *      boundary is the hardened window `@cc/desktop` ships (ADR 0003 decision 9).
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { build, type Plugin } from 'esbuild';
 import ts from 'typescript';
@@ -133,6 +133,13 @@ export async function checkUi(
   readText: (path: string) => string,
   libraries: readonly string[] = [],
 ): Promise<D3Result> {
+  // esbuild reports real paths, so a root reached through a symlink (macOS's /var is
+  // /private/var) would otherwise put every ui/ file outside ui/.
+  try {
+    root = realpathSync(root);
+  } catch {
+    // A missing root has no ui/ files; listCodeFiles returns none.
+  }
   const uiDir = resolve(root, 'ui');
   const files = listCodeFiles(uiDir);
   if (files.length === 0) return { files: 0, problems: [] };
