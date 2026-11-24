@@ -1,7 +1,7 @@
 # Your Command Center engine: agent instructions
 
 This repository configures one person's Command Center. It holds configuration, theme,
-UI widgets, framework and pack files and connectors.lock, and pins the @cc/* foundation.
+the app UI, framework and pack files and connectors.lock, and pins the @cc/* foundation.
 
 ## Rules
 1. Command Center's own AI never changes code: it has no file or shell tools and its GitHub
