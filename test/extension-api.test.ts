@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cpSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -191,6 +191,16 @@ describe('rule D3 for engine ui/ (ADR 0003 decision 8)', () => {
     symlinkSync(dir, link, 'junction');
     dirs.push(link);
     expect((await validate(link)).find((s) => s.name === 'ui/ (D3)')?.ok).toBe(true);
+  });
+
+  it('C-08-02 a UI test in ui/ may import its test runner, since cc-build never bundles it; the code it tests is still checked', async () => {
+    const dir = copyOfFixtureEngine();
+    mkdirSync(join(dir, 'ui', 'test'));
+    writeFileSync(join(dir, 'ui', 'test', 'home.test.ts'), "import { it } from 'vitest';\nit('runs headless', () => undefined);\n");
+    const d3 = async () => (await validate(dir)).find((s) => s.name === 'ui/ (D3)');
+    expect((await d3())?.ok).toBe(true);
+    writeFileSync(join(dir, 'ui', 'test', 'harness.ts'), "import { it } from 'vitest';\nexport const run = it;\n");
+    expect((await d3())?.problems.join('\n')).toContain('ui/test/harness.ts imports vitest;');
   });
 
   it('C-08-02 a ui/ file esbuild cannot parse fails closed instead of passing unchecked', async () => {

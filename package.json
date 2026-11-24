@@ -20,6 +20,8 @@
     "cc:lock-verify": "node tools/lock-verify.ts",
     "cc:schemas": "node tools/gen-schemas.ts",
     "cc:upgrade": "node tools/cc.ts upgrade",
+    "cc:eject": "node tools/cc.ts eject",
+    "cc:ui-update": "node tools/cc.ts ui-update",
     "cc:include": "node tools/cc.ts include",
     "cc:flags": "node tools/cc.ts flags"
   },

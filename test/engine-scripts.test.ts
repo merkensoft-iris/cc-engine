@@ -28,7 +28,9 @@ function allOn(): BuildFlags {
  * A temporary engine with a fake @cc/build whose bins record argv and cwd to `calls.jsonl`
  * and exit with the code in their first `--exit=<n>` argument.
  */
-function engineWithFakeBuild(bins: readonly string[] = ['cc-build', 'cc-start', 'cc-upgrade', 'cc-include', 'cc-install-stamp']): string {
+function engineWithFakeBuild(
+  bins: readonly string[] = ['cc-build', 'cc-start', 'cc-upgrade', 'cc-eject', 'cc-ui-update', 'cc-include', 'cc-install-stamp'],
+): string {
   // realpath: on macOS the temporary directory is under /var, a symlink to /private/var, and
   // the bin sees the resolved path as its cwd.
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'cc-scripts-')));
@@ -74,6 +76,8 @@ describe('P1-16 engine scripts: package.json wiring', () => {
     ['build', 'build'],
     ['start', 'start'],
     ['cc:upgrade', 'upgrade'],
+    ['cc:eject', 'eject'],
+    ['cc:ui-update', 'ui-update'],
     ['cc:include', 'include'],
     ['cc:flags', 'flags'],
   ])('%s goes through the @cc/build seam as `%s`', (script, command) => {
@@ -94,7 +98,7 @@ describe('P1-16 build flags: features not built yet stay off', () => {
     expect(flagLines()).toEqual(['build=off', 'upgrade=off', 'start=off', 'include=off']);
   });
 
-  it.each(['build', 'start', 'upgrade', 'include'])('%s with its flag off names the build step and exits 1, running nothing', (command) => {
+  it.each(['build', 'start', 'upgrade', 'eject', 'ui-update', 'include'])('%s with its flag off names the build step and exits 1, running nothing', (command) => {
     const root = engineWithFakeBuild();
     const out = capture();
     expect(run(command, [], { root, log: out.log })).toBe(1);
@@ -124,6 +128,8 @@ describe('P1-16 seam: a flag that is on runs the @cc/build bin', () => {
     ['build', 'cc-build'],
     ['start', 'cc-start'],
     ['upgrade', 'cc-upgrade'],
+    ['eject', 'cc-eject'],
+    ['ui-update', 'cc-ui-update'],
     ['include', 'cc-include'],
     ['install-stamp', 'cc-install-stamp'],
   ])('%s runs %s in the engine root with the arguments passed through', (command, bin) => {
