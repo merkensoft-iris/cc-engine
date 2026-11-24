@@ -4,7 +4,8 @@ The Command Center engine template: the repository a user copies ("Use this temp
 fork) to set up their own Command Center, *your-engine*. It holds no foundation code - only
 pinned `@cc/*` dependencies and the user's business customisation (configuration, theme, the
 app UI, frameworks and packs, `connectors.lock`) - and its `AGENTS.md`
-forbids the engine's own AI from changing code. The design lives in
+forbids Command Center's own AI from changing code and lets development agents change only the
+UI, theme and configuration, through pull requests the user reviews. The design lives in
 [cc-foundation/docs/design](https://github.com/merkensoft-iris/cc-foundation/tree/main/docs/design),
 chiefly 08 §4 (layout and extension points), §5.2 (AI enforcement) and §9 (CI).
 
@@ -113,7 +114,7 @@ your machine:
 | `pnpm cc:flags` | Prints the build flags as `name=on\|off` |
 | `pnpm cc:validate` | Validates `cc.config.ts`, `theme/tokens.json`, `connectors.lock` and rule D3 for `ui/` |
 | `pnpm cc:path-guard` | In CI: an include PR may change only `connectors.lock`; automated PRs may not touch the AI enforcement files |
-| `pnpm cc:harness-check` | Checks the Claude Code and Codex harness files deny exactly what ADR 0005 requires; while the lock-down is parked, the parked `.claude/settings.lockdown.json` and `.codex/config.lockdown.toml` |
+| `pnpm cc:harness-check` | Checks the Claude Code and Codex harness files deny exactly what ADR 0005 requires (while the lock-down is parked, the parked `.claude/settings.lockdown.json` and `.codex/config.lockdown.toml`), and that the development profile allows edits to the `AGENTS.md` rule 1 paths and nowhere else (ADR 0008) |
 | `pnpm cc:lock-verify` | Checks every `connectors.lock` pin against its release |
 | `pnpm cc:schemas [--check]` | Regenerates the JSON Schemas in `extension-api/v1/` |
 | `postinstall` | Writes the install stamp after every `pnpm install` (`cc-install-stamp`, ADR 0004 decision 2). Build flag `build` |
@@ -131,10 +132,20 @@ nothing, and the decided rules wait, still checked by CI, in `.claude/settings.l
 and `.codex/config.lockdown.toml`. See [docs/lockdown-parked.md](docs/lockdown-parked.md) for
 what still runs, how it comes back on, and the plan after that.
 
-Once re-enabled, the engine's AI reads, and proposes changes through Command Center; it does not edit files,
-run a shell, commit or push. `.claude/settings.json` removes those tools from Claude Code
-(verified on Claude Code 2.1.278) and `.codex/config.toml` asks Codex for a read-only sandbox
-(not yet verified); see `AGENTS.md` and [docs/repository-settings.md](docs/repository-settings.md).
+Once re-enabled, Command Center's own AI, and any session started here without a profile,
+reads, and proposes changes through Command Center; it does not edit files, run a shell, commit
+or push. `.claude/settings.json` removes those tools from Claude Code (verified on Claude Code
+2.1.278) and `.codex/config.toml` asks Codex for a read-only sandbox (not yet verified); see
+`AGENTS.md` and [docs/repository-settings.md](docs/repository-settings.md).
+
+Development agents working for the user change `ui/`, `theme/`, `cc.config.ts`, `frameworks/`
+and `packs/` through pull requests the user reviews (`AGENTS.md` rule 1, ADR 0008). They run
+under the development profile, `claude --setting-sources user,local --settings
+.claude/settings.development.json` or `codex --profile development`, and follow the skill in
+`.agents/skills/cc-engine-ui/`; see [docs/lockdown-parked.md](docs/lockdown-parked.md) for what
+the profile allows and what it cannot stop. On a foundation dependency PR, CI comments the
+codemod edits and the UI drift: upstream changes to the screens the engine ejected.
+
 A person who needs a shell here starts their tool without the project settings, for example
 `claude --setting-sources user` - which is exactly why the harness is the fifth layer and not
 the only one.
