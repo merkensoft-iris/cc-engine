@@ -23,6 +23,11 @@ import { EXTENSION_API_SUPPORTED } from '../extension-api/v1/engine.ts';
 
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 const DECLARATION_FILE = /\.d\.[cm]?ts$/;
+/**
+ * The UI tests (`*.test.ts` files in ui/) run under vitest, never in the window: `cc-build` bundles
+ * only what `ui/app.ts` reaches, so it never takes one, and this check skips them.
+ */
+const TEST_FILE = /\.test\.[cm]?[jt]sx?$/;
 
 /** The packages a UI imports by versioned entry point only (ADR 0003 decision 2). */
 export const UI_CONTRACT_PACKAGES = ['@cc/ui-sdk', '@cc/ui'] as const;
@@ -85,7 +90,7 @@ function listCodeFiles(dir: string): string[] {
     return [];
   }
   return entries
-    .filter((e) => e.isFile() && CODE_FILE.test(e.name) && !DECLARATION_FILE.test(e.name))
+    .filter((e) => e.isFile() && CODE_FILE.test(e.name) && !DECLARATION_FILE.test(e.name) && !TEST_FILE.test(e.name))
     .map((e) => join(e.parentPath, e.name))
     .sort();
 }

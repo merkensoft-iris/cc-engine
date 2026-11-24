@@ -1,0 +1,37 @@
+/*
+ * This engine's stylesheet: ui/app.ts imports it after the default UI's (@cc/ui/v1/app.css), so
+ * a rule here wins over the default one it matches. Restyle with the theme tokens first
+ * (theme/tokens.json): every screen follows them, and so does the confirm window, which this
+ * file never reaches. Read a token here as its custom property, with a fallback:
+ * color.accent is var(--cc-color-accent, ...), radius.medium is var(--cc-radius-medium, ...).
+ *
+ * The default UI's markup and class names may change in a foundation release without an
+ * extension API bump, so check the app after each foundation update.
+ *
+ * A restyle of a default screen, for example (remove the comment to use it):
+ *
+ *   .nav-item.current {
+ *     border-bottom: 2px solid var(--cc-color-accent, #0b6e4f);
+ *   }
+ */
+
+/*
+ * The example Home of ui/screens/example-home.ts; nothing matches it until ui/app.ts uses it.
+ * --cc-pad is the default UI's spacing unit, which follows the density.scale token.
+ */
+.example-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-pad, 8px);
+  margin: 0 0 calc(var(--cc-pad, 8px) * 2);
+  padding: var(--cc-pad, 8px) calc(var(--cc-pad, 8px) * 2);
+  border: 1px solid var(--cc-color-border, #8888);
+  border-left: 4px solid var(--cc-color-accent, #0b6e4f);
+  border-radius: var(--cc-radius-medium, 8px);
+  background: var(--cc-color-surface, Canvas);
+}
+
+.example-banner p {
+  margin: 0;
+}

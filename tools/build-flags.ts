@@ -25,7 +25,7 @@ export const BUILD_FLAGS = {
   },
   upgrade: {
     on: false,
-    what: 'cc:upgrade, the foundation codemods',
+    what: 'cc:upgrade, the foundation codemods, and cc:eject and cc:ui-update for default screens the engine takes over',
     arrives: 'the first cc:release of the @cc/* packages, pinned here (P1-16)',
   },
   start: {

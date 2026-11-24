@@ -6,6 +6,8 @@
  *   build          pnpm build            -> cc-build          build flag `build`
  *   start          pnpm start            -> cc-start          build flag `start`
  *   upgrade        pnpm cc:upgrade       -> cc-upgrade        build flag `upgrade`
+ *   eject          pnpm cc:eject         -> cc-eject          build flag `upgrade`
+ *   ui-update      pnpm cc:ui-update     -> cc-ui-update      build flag `upgrade`
  *   include        pnpm cc:include       -> cc-include        build flag `include`
  *   install-stamp  postinstall           -> cc-install-stamp  build flag `build`; a no-op while off
  *   flags          pnpm cc:flags         prints every build flag as name=on|off
@@ -42,6 +44,8 @@ export const COMMANDS: Readonly<Record<string, Command>> = {
   build: { script: 'pnpm build', flag: 'build', bin: 'cc-build', offExit: 1 },
   start: { script: 'pnpm start', flag: 'start', bin: 'cc-start', offExit: 1 },
   upgrade: { script: 'pnpm cc:upgrade', flag: 'upgrade', bin: 'cc-upgrade', offExit: 1 },
+  eject: { script: 'pnpm cc:eject', flag: 'upgrade', bin: 'cc-eject', offExit: 1 },
+  'ui-update': { script: 'pnpm cc:ui-update', flag: 'upgrade', bin: 'cc-ui-update', offExit: 1 },
   include: { script: 'pnpm cc:include', flag: 'include', bin: 'cc-include', offExit: 1 },
   'install-stamp': { script: 'postinstall', flag: 'build', bin: 'cc-install-stamp', offExit: 0 },
 };

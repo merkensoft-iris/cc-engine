@@ -21,7 +21,8 @@
     "paths": {
       "@cc/schemas/engine/v1": ["./extension-api/v1/engine.ts"],
       "@cc/schemas/engine/v1-tokens": ["./extension-api/v1/tokens.ts"],
-      "@cc/ui-sdk/v1": ["./extension-api/v1/ui-sdk.d.ts"]
+      "@cc/ui-sdk/v1": ["./extension-api/v1/ui-sdk.d.ts"],
+      "@cc/ui/v1": ["./extension-api/v1/ui.d.ts"]
     }
   },
   "include": ["cc.config.ts", "ui", "extension-api", "tools", "test", "vitest.config.ts"],
