@@ -150,6 +150,19 @@
         "routes"
       ],
       "additionalProperties": false
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "libraries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?:@[a-z0-9][a-z0-9._~-]*\\/)?[a-z0-9][a-z0-9._~-]*$"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

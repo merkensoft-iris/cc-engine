@@ -1,7 +1,11 @@
 /**
- * Rule D3 for the engine's `ui/` (08 §4.2; ADR 0003 decision 8): widgets import only the
- * versioned `@cc/ui-sdk` and token entry points and React; no Node built-ins, no network, no
- * internal runtime packages, and no relative import that leaves `ui/`.
+ * Rule D3 for the engine's `ui/` (08 §4.2; ADR 0003 decision 8 as amended by ADR 0008
+ * decision 1): a file of `ui/` imports other files of `ui/`, the versioned entry points of the
+ * UI contract and the default UI (`@cc/ui-sdk/v<N>`, `@cc/ui/v<N>` and its stylesheet
+ * `@cc/ui/v<N>/app.css`), and the UI libraries the engine names in `cc.config.ts`
+ * (`ui: { libraries: [...] }`, any subpath). No Node built-ins, no network, no other package,
+ * and no relative import that leaves `ui/`. Interim copy of the check `cc-build` runs
+ * (`@cc/build`, `packages/build/src/ui.ts`) until that package is pinned.
  *
  * Two checks, as ADR 0003 decided:
  *   1. The import allowlist, read from esbuild's resolver (the resolver the real bundle uses,
@@ -9,9 +13,9 @@
  *      `ui/` files than exist, the tree is refused rather than passed unchecked.
  *   2. A global-name scan for `fetch`, `WebSocket`, `eval` and the like. It is a lint for
  *      honest mistakes, not a boundary: `globalThis['fe' + 'tch']` evades it by design. The
- *      boundary is the hardened renderer `@cc/desktop` and `@cc/build` ship (decision 9, P1-16).
+ *      boundary is the hardened window `@cc/desktop` ships (ADR 0003 decision 9).
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { build, type Plugin } from 'esbuild';
 import ts from 'typescript';
@@ -20,14 +24,31 @@ import { EXTENSION_API_SUPPORTED } from '../extension-api/v1/engine.ts';
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 const DECLARATION_FILE = /\.d\.[cm]?ts$/;
 
-/** The bare imports a widget may use, for every extension API the foundation supports. */
-export function allowedImports(): Set<string> {
-  const allowed = new Set(['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom']);
+/** The packages a UI imports by versioned entry point only (ADR 0003 decision 2). */
+export const UI_CONTRACT_PACKAGES = ['@cc/ui-sdk', '@cc/ui'] as const;
+
+/** The versioned entry points a file of `ui/` may import, for every extension API the foundation supports. */
+export function contractEntries(): Set<string> {
+  const entries = new Set<string>();
   for (const n of EXTENSION_API_SUPPORTED) {
-    allowed.add(`@cc/ui-sdk/v${n}`);
-    allowed.add(`@cc/schemas/engine/v${n}-tokens`);
+    entries.add(`@cc/ui-sdk/v${n}`);
+    entries.add(`@cc/ui/v${n}`);
+    entries.add(`@cc/ui/v${n}/app.css`);
   }
-  return allowed;
+  return entries;
+}
+
+/** The package a bare specifier names: `@scope/name` or `name`. */
+export function packageOf(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? specifier);
+}
+
+/** Whether a file of `ui/` may import the bare `specifier`, given the engine's `ui.libraries`. */
+export function isAllowedImport(specifier: string, libraries: readonly string[]): boolean {
+  const name = packageOf(specifier);
+  if ((UI_CONTRACT_PACKAGES as readonly string[]).includes(name)) return contractEntries().has(specifier);
+  return !name.startsWith('@cc/') && libraries.includes(name);
 }
 
 /** Globals a widget must not reach for: network, code loading, workers and Node. */
@@ -103,13 +124,27 @@ function scanGlobals(file: string, text: string, display: string): string[] {
   return problems;
 }
 
-/** Runs both D3 checks over `<root>/ui`. */
-export async function checkUi(root: string, readText: (path: string) => string): Promise<D3Result> {
+/**
+ * Runs both D3 checks over `<root>/ui`. `libraries` are the UI libraries the engine names in
+ * `cc.config.ts` (`ui.libraries`), already validated by its schema.
+ */
+export async function checkUi(
+  root: string,
+  readText: (path: string) => string,
+  libraries: readonly string[] = [],
+): Promise<D3Result> {
+  // esbuild reports real paths, so a root reached through a symlink (macOS's /var is
+  // /private/var) would otherwise put every ui/ file outside ui/.
+  try {
+    root = realpathSync(root);
+  } catch {
+    // A missing root has no ui/ files; listCodeFiles returns none.
+  }
   const uiDir = resolve(root, 'ui');
   const files = listCodeFiles(uiDir);
   if (files.length === 0) return { files: 0, problems: [] };
 
-  const allowed = allowedImports();
+  const allowed = [...contractEntries(), ...libraries.map((l) => `${l} (cc.config.ts ui.libraries)`)].join(', ');
   const problems: string[] = [];
   const display = (p: string) => toPosix(relative(root, p));
 
@@ -128,10 +163,8 @@ export async function checkUi(root: string, readText: (path: string) => string):
           }
           return undefined;
         }
-        if (!allowed.has(args.path)) {
-          problems.push(
-            `D3: ${from} imports ${args.path}; engine ui/ may import only ${[...allowed].join(', ')}`,
-          );
+        if (!isAllowedImport(args.path, libraries)) {
+          problems.push(`D3: ${from} imports ${args.path}; engine ui/ may import only ${allowed}`);
         }
         return { path: args.path, external: true };
       });

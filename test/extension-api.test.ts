@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,6 +85,14 @@ describe('cc.config schema, extension API 1', () => {
     expect(engineConfigSchema.safeParse({ extensionApi: 1, vocabulary: { goal: ' ' } }).success).toBe(false);
     expect(engineConfigSchema.safeParse({ extensionApi: 1, vocabulary: { goal: 'Rock' } }).success).toBe(true);
   });
+
+  it('C-08-08 ui.libraries names npm packages, never a foundation package (ADR 0008 decision 1)', () => {
+    const ui = (value: unknown) => engineConfigSchema.safeParse({ extensionApi: 1, ui: value }).success;
+    expect(ui({ libraries: ['react', 'react-dom', '@fictional/charts'] })).toBe(true);
+    expect(ui({ libraries: ['@cc/core'] })).toBe(false);
+    expect(ui({ libraries: ['Not A Package'] })).toBe(false);
+    expect(ui({ layout: 'wide' })).toBe(false);
+  });
 });
 
 describe('theme tokens, extension API 1 (owner decision Q9)', () => {
@@ -152,9 +160,37 @@ describe('rule D3 for engine ui/ (ADR 0003 decision 8)', () => {
     const d3 = sections.find((s) => s.name === 'ui/ (D3)');
     const text = d3?.problems.join('\n') ?? '';
     expect(d3?.ok).toBe(false);
-    for (const needle of ['imports node:fs', 'imports @cc/ui-sdk/host', 'imports @cc/schemas;', 'outside ui/', 'uses fetch', 'uses WebSocket']) {
+    for (const needle of [
+      'imports node:fs',
+      'imports @cc/ui-sdk/host',
+      'imports @cc/schemas;',
+      'outside ui/',
+      'imports react;',
+      'imports @cc/ui/v2;',
+      'uses fetch',
+      'uses WebSocket',
+    ]) {
       expect(text, needle).toContain(needle);
     }
+  });
+
+  it('C-08-02 a UI library imports only when cc.config.ts names it in ui.libraries, with any subpath', async () => {
+    const dir = copyOfFixtureEngine();
+    writeFileSync(join(dir, 'ui', 'Badge.tsx'), "import { useState } from 'react';\nexport const Badge = () => { void useState; return <b>ok</b>; };\n");
+    const d3 = async () => (await validate(dir)).find((s) => s.name === 'ui/ (D3)');
+    const refused = (await d3())?.problems.join('\n') ?? '';
+    expect(refused).toContain('imports react;');
+    expect(refused).toContain('imports react/jsx-runtime;');
+    writeFileSync(join(dir, 'cc.config.ts'), "export default { extensionApi: 1, ui: { libraries: ['react'] } };\n");
+    expect((await d3())?.ok).toBe(true);
+  });
+
+  it('C-08-02 an engine reached through a symlink is checked at its real path', async () => {
+    const dir = copyOfFixtureEngine();
+    const link = `${dir}-link`;
+    symlinkSync(dir, link, 'junction');
+    dirs.push(link);
+    expect((await validate(link)).find((s) => s.name === 'ui/ (D3)')?.ok).toBe(true);
   });
 
   it('C-08-02 a ui/ file esbuild cannot parse fails closed instead of passing unchecked', async () => {

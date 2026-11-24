@@ -67,25 +67,32 @@ export async function loadConfig(root: string): Promise<unknown> {
   return mod.default;
 }
 
-async function validateConfig(root: string): Promise<Section> {
+/** The `cc.config.ts` section, and the UI libraries it names when it is valid (rule D3). */
+async function validateConfig(root: string): Promise<Section & { uiLibraries: readonly string[] }> {
   const name = 'cc.config.ts';
-  if (!existsSync(join(root, name))) return { name, ok: false, summary: 'missing', problems: [`${name} is missing (08 §4.3 item 1)`] };
+  if (!existsSync(join(root, name))) return { name, ok: false, summary: 'missing', problems: [`${name} is missing (08 §4.3 item 1)`], uiLibraries: [] };
   let value: unknown;
   try {
     value = await loadConfig(root);
   } catch (error) {
     const errors = (error as { errors?: { text: string }[] }).errors;
     const text = errors?.map((e) => e.text).join('; ') ?? (error as Error).message;
-    return { name, ok: false, summary: 'could not be loaded', problems: [`${name}: ${text}`] };
+    return { name, ok: false, summary: 'could not be loaded', problems: [`${name}: ${text}`], uiLibraries: [] };
   }
   if (typeof value !== 'object' || value === null) {
-    return { name, ok: false, summary: 'no config', problems: [`${name} must export default the config object`] };
+    return { name, ok: false, summary: 'no config', problems: [`${name} must export default the config object`], uiLibraries: [] };
   }
   const apiProblem = checkExtensionApi((value as { extensionApi?: unknown }).extensionApi);
-  if (apiProblem !== null) return { name, ok: false, summary: 'unsupported extension API', problems: [`${name}: ${apiProblem}`] };
+  if (apiProblem !== null) return { name, ok: false, summary: 'unsupported extension API', problems: [`${name}: ${apiProblem}`], uiLibraries: [] };
   const parsed = engineConfigSchema.safeParse(value);
-  if (!parsed.success) return { name, ok: false, summary: 'invalid', problems: zodProblems(name, parsed.error) };
-  return { name, ok: true, summary: `extension API ${parsed.data.extensionApi}`, problems: [] };
+  if (!parsed.success) return { name, ok: false, summary: 'invalid', problems: zodProblems(name, parsed.error), uiLibraries: [] };
+  return {
+    name,
+    ok: true,
+    summary: `extension API ${parsed.data.extensionApi}`,
+    problems: [],
+    uiLibraries: parsed.data.ui?.libraries ?? [],
+  };
 }
 
 function validateJson(root: string, name: string, schema: z.ZodType, describe: (v: never) => string): Section {
@@ -111,7 +118,8 @@ function countFiles(dir: string, pattern: RegExp): number {
 }
 
 export async function validate(root: string): Promise<Section[]> {
-  const sections: Section[] = [await validateConfig(root)];
+  const { uiLibraries, ...config } = await validateConfig(root);
+  const sections: Section[] = [config];
   sections.push(
     validateJson(root, 'theme/tokens.json', themeTokensSchema, (t: z.output<typeof themeTokensSchema>) => {
       const set = (['color', 'font', 'radius', 'density'] as const).reduce((n, g) => n + Object.keys(t[g] ?? {}).length, 0);
@@ -121,8 +129,8 @@ export async function validate(root: string): Promise<Section[]> {
   sections.push(
     validateJson(root, 'connectors.lock', connectorsLockSchema, (l: z.output<typeof connectorsLockSchema>) => `lockVersion ${l.lockVersion}, ${l.entries.length} entr${l.entries.length === 1 ? 'y' : 'ies'}`),
   );
-  const ui = await checkUi(root, readText);
-  sections.push({ name: 'ui/ (D3)', ok: ui.problems.length === 0, summary: `${ui.files} widget file(s)`, problems: ui.problems });
+  const ui = await checkUi(root, readText, uiLibraries);
+  sections.push({ name: 'ui/ (D3)', ok: ui.problems.length === 0, summary: `${ui.files} UI file(s)`, problems: ui.problems });
 
   const yaml = /\.ya?ml$/;
   const deferred = countFiles(join(root, 'frameworks'), yaml) + countFiles(join(root, 'packs'), yaml);

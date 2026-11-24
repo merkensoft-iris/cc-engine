@@ -1,20 +1,19 @@
-# ui/: widgets in declared slots
+# ui/: the app UI
 
-Widgets for the slots the foundation declares (08 §4.3 item 3). The layout is fixed; a widget
-appears only in its slot (owner decision Q9, 10 Nov 2026). Extension API 1 declares
-`home.header` and `home.aside` (`extension-api/v1/slots.ts`).
+The engine owns the app UI (08 §4.3 item 3; ADR 0008 decision 1). With no `ui/app.ts` here,
+Command Center runs the foundation's default UI. With one, `cc-build` bundles `ui/app.ts` as
+the composition root: the default UI from `@cc/ui/v1` as it is, restyled, with screens
+replaced one at a time, or a UI of your own built on `@cc/ui-sdk/v1` alone.
 
-```tsx
-// ui/WeekBanner.tsx
-import { defineWidget, token } from '@cc/ui-sdk/v1';
+```ts
+// ui/app.ts
+import '@cc/ui/v1/app.css';
+import { createApp } from '@cc/ui/v1';
 
-function WeekBanner() {
-  return <strong style={{ color: token('color.accent') }}>This week</strong>;
-}
-
-export default defineWidget({ slot: 'home.header', title: 'Week banner', component: WeekBanner });
+createApp().start();
 ```
 
-Rule D3 (08 §4.2): a widget imports only `@cc/ui-sdk/v1`, `@cc/schemas/engine/v1-tokens`,
-`react` and `react-dom`, and relative files inside `ui/`. No Node built-ins, no network, no
-other packages. `pnpm cc:validate` checks every file here and fails if it cannot parse one.
+Rule D3 (08 §4.2): a file here imports only other files of `ui/`, `@cc/ui-sdk/v1`, `@cc/ui/v1`
+and `@cc/ui/v1/app.css`, and the UI libraries `cc.config.ts` names in `ui.libraries` (for
+example `react`). No Node built-ins, no network, no other packages. `pnpm cc:validate` checks
+every file here and fails if it cannot parse one.
